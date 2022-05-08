@@ -9,6 +9,22 @@ L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
         '&copy; <a href="http://www.openstreetmap.org/copyright%22%3EOpenStreetMap</a>',
 }).addTo(map);
 
+let info = L.control();
+
+info.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'info');
+    this.update();
+    return this._div;
+};
+
+info.update = function (props) {
+    this._div.innerHTML = '<h4>Fire Occurances</h4>' +  (props ?
+        '<b>' + props['NAME'] + '</b><br />' + props['FireCount'] + ' fires per year'
+        : 'Hover over a state');
+};
+
+info.addTo(map);
+
 d3.json("2017Fires.geojson").then(function (dataset){
     console.log(dataset);
 
@@ -71,10 +87,11 @@ d3.json("2017Fires.geojson").then(function (dataset){
     document.body.appendChild(timeSlider);
     document.body.appendChild(monthDisplay);
 });
-
+let geoJson;
 d3.json("fires-by-state.geojson").then(function (dataset){
-    L.geoJson(dataset, {
-        style:fireCountStyle
+    geoJson = L.geoJson(dataset, {
+        style:fireCountStyle,
+        onEachFeature:onEachFeature
     }).addTo(map);
 });
 
@@ -108,7 +125,7 @@ var legend = L.control({position: 'bottomleft'});
 
 legend.onAdd = function (map) {
 
-    var div = L.DomUtil.create('div', 'info legend'),
+    var div = L.DomUtil.create('div', 'legend'),
         grades = [10, 20, 30, 40, 50, 60],
         labels = [];
 
@@ -163,4 +180,33 @@ function getFireCountColor(d) {
                         : d < 60
                             ? colors[5]
                             : colors[6];
+}
+
+function highlightFeature(e) {
+    var layer = e.target;
+
+    layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+
+    info.update(layer['feature']['properties']);
+}
+
+function resetHighlight(e) {
+    geoJson.resetStyle(e.target);
+    info.update();
+}
+
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight
+    });
 }
