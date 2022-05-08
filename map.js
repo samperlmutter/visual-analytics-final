@@ -1,5 +1,7 @@
 // L.map accept the ID of the DIV as an input
 let map = L.map("map").setView([37.8, -96], 4);
+const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
 
 L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
     maxZoom: 18,
@@ -47,10 +49,14 @@ d3.json("2017Fires.geojson").then(function (dataset){
     document.body.appendChild(btn);
 
     let timeSlider = document.createElement('input');
+
     timeSlider.type = 'range';
     timeSlider.min = '1';
     timeSlider.max = '12';
     timeSlider.value = '1';
+
+    let monthDisplay = document.createElement('span');
+    monthDisplay.innerText = 'Month: ' + months[parseInt(timeSlider.value) - 1];
 
     timeSlider.oninput = function () {
         clearMarkers();
@@ -59,9 +65,11 @@ d3.json("2017Fires.geojson").then(function (dataset){
                 addMarker(d);
             }
         }
+        monthDisplay.innerText = 'Month: ' + months[parseInt(timeSlider.value) - 1];
     };
 
     document.body.appendChild(timeSlider);
+    document.body.appendChild(monthDisplay);
 });
 
 d3.json("fires-by-state.geojson").then(function (dataset){
