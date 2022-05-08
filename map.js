@@ -7,7 +7,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
         '&copy; <a href="http://www.openstreetmap.org/copyright%22%3EOpenStreetMap</a>',
 }).addTo(map);
 
-d3.json("National_Obesity_By_State.geojson").then(function (dataset){
+d3.json("2017 Fire Occurances/2017Fires.geojson").then(function (dataset){
     console.log(dataset);
 
     L.geoJson(dataset, {
