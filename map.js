@@ -9,6 +9,17 @@ L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
 
 d3.json("2017 Fire Occurances/2017Fires.geojson").then(function (dataset){
     console.log(dataset);
+    let fires = {};
+    for (let f of dataset['features']) {
+        let state = f['properties']['FIRE_ID'].slice(0, 2)
+        if (fires[state] === undefined) {
+            fires[state] = [f];
+        } else {
+            fires[state].push(f);
+        }
+    }
+
+    console.log(fires);
 
     L.geoJson(dataset, {
         style:style
