@@ -21,14 +21,70 @@ d3.json("2017 Fire Occurances/2017Fires.geojson").then(function (dataset){
 
     console.log(fires);
 
-    L.geoJson(dataset, {
-        style:style
-    }).addTo(map);
+
+
+
+    let btn = document.createElement("button");
+    btn.innerHTML = "Show Fires by Size and Type";
+    btn.addEventListener("click", function () {
+        let latlng = [];
+        for (let i of dataset["features"]) {
+            let lat = i['properties']["LATITUDE"]
+            let lon = i['properties']["LONGITUDE"]
+            let acre = i['properties']["ACRES"]
+            let type = i['properties']["FIRE_TYPE"]
+            latlng.push({
+                lat:lat,
+                lon:lon,
+                acre:acre,
+                type:type
+            })
+
+        }
+
+        //   L.geoJson(dataset, {
+        //      style:style
+        //  }).addTo(map);
+
+
+        for(let l of latlng){
+            var marker = L.circleMarker([l['lat'],l['lon']],  {
+            });
+            marker.setRadius(l['acre']/10000);
+
+            switch(l['type']){
+                case 'Prescribed Fire': marker.setStyle({color: 'green'})
+                    break;
+                case 'Wildfire': marker.setStyle({color: 'red'})
+                    break;
+                default: marker.setStyle({color: 'grey'})
+            }
+
+
+            marker.addTo(map);
+
+        }
+
+
+    });
+    document.body.appendChild(btn);
+
+
+
+
+
 });
+
+
+
+
+
+
+
 
 function style(feature) {
     return {
-        fillColor: getColor(feature.properties.Obesity),
+        fillColor: getColor(feature.properties.FIRE_TYPE),
         weight: 2,
         opacity: 1,
         color: "white",
@@ -51,17 +107,11 @@ function getColor(d) {
         "#b10026",
     ];
     // colors = colors.reverse();
-    return d < 20
+    return d = 'Prescribed Fire'
         ? colors[0]
-        : d < 25
+        : d = "Wildfire"
             ? colors[1]
-            : d < 30
+            : d = "Unknown"
                 ? colors[2]
-                : d < 35
-                    ? colors[3]
-                    : d < 40
-                        ? colors[4]
-                        : d < 45
-                            ? colors[5]
-                            : colors[6];
+                : colors[6];
 }
