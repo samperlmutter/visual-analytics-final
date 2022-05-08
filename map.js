@@ -100,7 +100,7 @@ function getFireCountColor(d) {
         ? colors[0]
         : d < 20
             ? colors[1]
-            : d = "Unknown"
+            : d < 30
                 ? colors[2]
                 : d < 40
                     ? colors[3]
