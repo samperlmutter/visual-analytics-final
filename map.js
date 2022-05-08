@@ -7,7 +7,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
         '&copy; <a href="http://www.openstreetmap.org/copyright%22%3EOpenStreetMap</a>',
 }).addTo(map);
 
-d3.json("2017 Fire Occurances/2017Fires.geojson").then(function (dataset){
+d3.json("2017Fires.geojson").then(function (dataset){
     console.log(dataset);
     let fires = {};
     for (let f of dataset['features']) {
@@ -18,11 +18,6 @@ d3.json("2017 Fire Occurances/2017Fires.geojson").then(function (dataset){
             fires[state].push(f);
         }
     }
-
-    console.log(fires);
-
-
-
 
     let btn = document.createElement("button");
     btn.innerHTML = "Show Fires by Size and Type";
@@ -69,22 +64,16 @@ d3.json("2017 Fire Occurances/2017Fires.geojson").then(function (dataset){
     });
     document.body.appendChild(btn);
 
-
-
-
-
+    d3.json("fires-by-state.geojson").then(function (dataset){
+        L.geoJson(dataset, {
+            style:fireCountStyle
+        }).addTo(map);
+    });
 });
 
-
-
-
-
-
-
-
-function style(feature) {
+function fireCountStyle(feature) {
     return {
-        fillColor: getColor(feature.properties.FIRE_TYPE),
+        fillColor: getFireCountColor(feature['properties']['FireCount']),
         weight: 2,
         opacity: 1,
         color: "white",
@@ -93,7 +82,7 @@ function style(feature) {
     };
 }
 
-function getColor(d) {
+function getFireCountColor(d) {
     // var colors = ['#f2f0f7','#dadaeb','#bcbddc','#9e9ac8','#807dba','#6a51a3','#4a1486'];
     // colors = colors.reverse();
     // var colors = ['#f6eff7','#d0d1e6','#a6bddb','#67a9cf','#3690c0','#02818a','#016450'];
@@ -107,11 +96,17 @@ function getColor(d) {
         "#b10026",
     ];
     // colors = colors.reverse();
-    return d = 'Prescribed Fire'
+    return d < 10
         ? colors[0]
-        : d = "Wildfire"
+        : d < 20
             ? colors[1]
             : d = "Unknown"
                 ? colors[2]
-                : colors[6];
+                : d < 40
+                    ? colors[3]
+                    : d < 50
+                        ? colors[4]
+                        : d < 60
+                            ? colors[5]
+                            : colors[6];
 }
