@@ -1,5 +1,5 @@
 // L.map accept the ID of the DIV as an input
-var map = L.map("map").setView([37.8, -96], 4);
+let map = L.map("map").setView([37.8, -96], 4);
 
 L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
     maxZoom: 18,
@@ -9,14 +9,21 @@ L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
 
 d3.json("2017Fires.geojson").then(function (dataset){
     console.log(dataset);
-    let fires = {};
-    for (let f of dataset['features']) {
-        let state = f['properties']['FIRE_ID'].slice(0, 2)
-        if (fires[state] === undefined) {
-            fires[state] = [f];
-        } else {
-            fires[state].push(f);
-        }
+
+    let latlng = [];
+    for (let i of dataset["features"]) {
+        let lat = i['properties']["LATITUDE"]
+        let lon = i['properties']["LONGITUDE"]
+        let acre = i['properties']["ACRES"]
+        let type = i['properties']["FIRE_TYPE"]
+        let month = parseInt(i['properties']['IG_DATE'].slice(5, 7));
+        latlng.push({
+            lat:lat,
+            lon:lon,
+            acre:acre,
+            type:type,
+            month:month
+        })
     }
 
     let btn1 = document.createElement("button");
@@ -33,57 +40,59 @@ d3.json("2017Fires.geojson").then(function (dataset){
     let btn = document.createElement("button");
     btn.innerHTML = "Show Fires by Size and Type";
     btn.addEventListener("click", function () {
-        let latlng = [];
-        for (let i of dataset["features"]) {
-            let lat = i['properties']["LATITUDE"]
-            let lon = i['properties']["LONGITUDE"]
-            let acre = i['properties']["ACRES"]
-            let type = i['properties']["FIRE_TYPE"]
-            latlng.push({
-                lat:lat,
-                lon:lon,
-                acre:acre,
-                type:type
-            })
-
-        }
-
-        //   L.geoJson(dataset, {
-        //      style:style
-        //  }).addTo(map);
-
-
         for(let l of latlng){
-            var marker = L.circleMarker([l['lat'],l['lon']],  {
-            });
-            marker.setRadius(l['acre']/10000);
-
-            switch(l['type']){
-                case 'Prescribed Fire': marker.setStyle({color: 'green'})
-                    break;
-                case 'Wildfire': marker.setStyle({color: 'blue'})
-                    break;
-                default: marker.setStyle({color: 'grey'})
-            }
-
-
-            marker.addTo(map);
-
+            addMarker(l)
         }
-
-
     });
     document.body.appendChild(btn);
 
-    d3.json("fires-by-state.geojson").then(function (dataset){
-        L.geoJson(dataset, {
-            style:fireCountStyle
-        }).addTo(map);
-    });
+    let timeSlider = document.createElement('input');
+    timeSlider.type = 'range';
+    timeSlider.min = '1';
+    timeSlider.max = '12';
+    timeSlider.value = '1';
 
+    timeSlider.oninput = function () {
+        clearMarkers();
+        for (let d of latlng) {
+            if (parseInt(this.value) === d.month) {
+                addMarker(d);
+            }
+        }
+    };
 
-
+    document.body.appendChild(timeSlider);
 });
+
+d3.json("fires-by-state.geojson").then(function (dataset){
+    L.geoJson(dataset, {
+        style:fireCountStyle
+    }).addTo(map);
+});
+
+function addMarker(data) {
+    var marker = L.circleMarker([data['lat'],data['lon']],  {
+    });
+    marker.setRadius(data['acre']/10000);
+
+    switch(data['type']){
+        case 'Prescribed Fire': marker.setStyle({color: 'green'})
+            break;
+        case 'Wildfire': marker.setStyle({color: 'red'})
+            break;
+        default: marker.setStyle({color: 'grey'})
+    }
+
+    marker.addTo(map);
+}
+
+function clearMarkers() {
+    map.eachLayer(function (layer) {
+        if (layer.options.radius !== undefined) {
+            map.removeLayer(layer);
+        }
+    });
+}
 
 
 //legend
