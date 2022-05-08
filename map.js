@@ -19,6 +19,17 @@ d3.json("2017Fires.geojson").then(function (dataset){
         }
     }
 
+    let btn1 = document.createElement("button");
+    btn1.innerHTML = "Clear Map";
+    btn1.addEventListener("click", function () {
+        map.eachLayer(function(layer){
+            if (layer.options.radius !== undefined) {
+                map.removeLayer(layer);
+            }
+        });
+    });
+    document.body.appendChild(btn1);
+
     let btn = document.createElement("button");
     btn.innerHTML = "Show Fires by Size and Type";
     btn.addEventListener("click", function () {
@@ -50,7 +61,7 @@ d3.json("2017Fires.geojson").then(function (dataset){
             switch(l['type']){
                 case 'Prescribed Fire': marker.setStyle({color: 'green'})
                     break;
-                case 'Wildfire': marker.setStyle({color: 'red'})
+                case 'Wildfire': marker.setStyle({color: 'blue'})
                     break;
                 default: marker.setStyle({color: 'grey'})
             }
@@ -69,7 +80,33 @@ d3.json("2017Fires.geojson").then(function (dataset){
             style:fireCountStyle
         }).addTo(map);
     });
+
+
+
 });
+
+
+//legend
+var legend = L.control({position: 'bottomleft'});
+
+legend.onAdd = function (map) {
+
+    var div = L.DomUtil.create('div', 'info legend'),
+        grades = [10, 20, 30, 40, 50, 60],
+        labels = [];
+
+    // loop through our density intervals and generate a label with a colored square for each interval
+    for (var i = 0; i < grades.length; i++) {
+        div.innerHTML +=
+            '<i style="background:' + getFireCountColor(grades[i] + 1) + '"></i> ' +
+            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+    }
+
+    return div;
+};
+
+legend.addTo(map);
+
 
 function fireCountStyle(feature) {
     return {
