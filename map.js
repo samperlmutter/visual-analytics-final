@@ -9,14 +9,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
         '&copy; <a href="http://www.openstreetmap.org/copyright%22%3EOpenStreetMap</a>',
 }).addTo(map);
 
-let geoJson;
-d3.json("fires-by-state.geojson").then(function (dataset){
-    geoJson = L.geoJson(dataset, {
-        style:fireCountStyle,
-        onEachFeature:onEachFeature
-    }).addTo(map);
-});
-
 let info = L.control();
 
 info.onAdd = function (map) {
@@ -36,31 +28,39 @@ info.addTo(map);
 let markerLayer;
 let markerLayers = [];
 for (let i = 0; i < months.length; i++) {
-    markerLayers.push(L.layerGroup());
+    markerLayers.push(L.layerGroup().setZIndex(1000));
 }
 
-d3.json("2017Fires.geojson").then(function (dataset){
-    let markerData = [];
-    for (let i of dataset["features"]) {
-        let lat = i['properties']["LATITUDE"]
-        let lon = i['properties']["LONGITUDE"]
-        let acre = i['properties']["ACRES"]
-        let type = i['properties']["FIRE_TYPE"]
-        let month = parseInt(i['properties']['IG_DATE'].slice(5, 7));
-        markerData.push({
-            lat:lat,
-            lon:lon,
-            acre:acre,
-            type:type,
-            month:month
-        });
-    }
+let geoJson;
+d3.json("fires-by-state.geojson").then(function (dataset){
+    geoJson = L.geoJson(dataset, {
+        style:fireCountStyle,
+        onEachFeature:onEachFeature
+    }).setZIndex(100).addTo(map);
 
-    for (let m of markerData) {
-        markerLayers[m.month - 1].addLayer(addMarker(m));
-    }
+    d3.json("2017Fires.geojson").then(function (dataset){
+        let markerData = [];
+        for (let i of dataset["features"]) {
+            let lat = i['properties']["LATITUDE"]
+            let lon = i['properties']["LONGITUDE"]
+            let acre = i['properties']["ACRES"]
+            let type = i['properties']["FIRE_TYPE"]
+            let month = parseInt(i['properties']['IG_DATE'].slice(5, 7));
+            markerData.push({
+                lat:lat,
+                lon:lon,
+                acre:acre,
+                type:type,
+                month:month
+            });
+        }
 
-    markerLayer = L.layerGroup(markerLayers).addTo(map);
+        for (let m of markerData) {
+            markerLayers[m.month - 1].addLayer(addMarker(m));
+        }
+
+        markerLayer = L.layerGroup(markerLayers).setZIndex(1000).addTo(map);
+    });
 });
 
 let btn1 = document.createElement("button");
