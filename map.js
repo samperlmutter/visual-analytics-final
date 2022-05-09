@@ -109,7 +109,7 @@ function addMarker(data) {
     switch(data['type']){
         case 'Prescribed Fire': marker.setStyle({color: 'green'})
             break;
-        case 'Wildfire': marker.setStyle({color: 'red'})
+        case 'Wildfire': marker.setStyle({color: 'blue'})
             break;
         default: marker.setStyle({color: 'grey'})
     }
