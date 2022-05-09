@@ -9,6 +9,14 @@ L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", {
         '&copy; <a href="http://www.openstreetmap.org/copyright%22%3EOpenStreetMap</a>',
 }).addTo(map);
 
+let geoJson;
+d3.json("fires-by-state.geojson").then(function (dataset){
+    geoJson = L.geoJson(dataset, {
+        style:fireCountStyle,
+        onEachFeature:onEachFeature
+    }).addTo(map);
+});
+
 let info = L.control();
 
 info.onAdd = function (map) {
@@ -25,75 +33,73 @@ info.update = function (props) {
 
 info.addTo(map);
 
-d3.json("2017Fires.geojson").then(function (dataset){
-    console.log(dataset);
+let markerLayer;
+let markerLayers = [];
+for (let i = 0; i < months.length; i++) {
+    markerLayers.push(L.layerGroup());
+}
 
-    let latlng = [];
+d3.json("2017Fires.geojson").then(function (dataset){
+    let markerData = [];
     for (let i of dataset["features"]) {
         let lat = i['properties']["LATITUDE"]
         let lon = i['properties']["LONGITUDE"]
         let acre = i['properties']["ACRES"]
         let type = i['properties']["FIRE_TYPE"]
         let month = parseInt(i['properties']['IG_DATE'].slice(5, 7));
-        latlng.push({
+        markerData.push({
             lat:lat,
             lon:lon,
             acre:acre,
             type:type,
             month:month
-        })
+        });
     }
 
-    let btn1 = document.createElement("button");
-    btn1.innerHTML = "Clear Map";
-    btn1.addEventListener("click", function () {
-        map.eachLayer(function(layer){
-            if (layer.options.radius !== undefined) {
-                map.removeLayer(layer);
-            }
-        });
-    });
-    document.body.appendChild(btn1);
+    for (let m of markerData) {
+        markerLayers[m.month - 1].addLayer(addMarker(m));
+    }
 
-    let btn = document.createElement("button");
-    btn.innerHTML = "Show Fires by Size and Type";
-    btn.addEventListener("click", function () {
-        for(let l of latlng){
-            addMarker(l)
+    markerLayer = L.layerGroup(markerLayers).addTo(map);
+});
+
+let btn1 = document.createElement("button");
+btn1.innerHTML = "Clear Map";
+btn1.addEventListener("click", function () {
+    map.removeLayer(markerLayer);
+});
+document.body.appendChild(btn1);
+
+let btn = document.createElement("button");
+btn.innerHTML = "Show Fires by Size and Type";
+btn.addEventListener("click", function () {
+    map.removeLayer(markerLayer);
+    map.addLayer(markerLayer);
+});
+document.body.appendChild(btn);
+
+let timeSlider = document.createElement('input');
+
+timeSlider.type = 'range';
+timeSlider.min = '1';
+timeSlider.max = '12';
+timeSlider.value = '1';
+
+let monthDisplay = document.createElement('span');
+monthDisplay.innerText = 'Month: ' + months[parseInt(timeSlider.value) - 1];
+
+timeSlider.oninput = function () {
+    map.eachLayer(function (layer) {
+        if (markerLayers.includes(layer)) {
+            map.removeLayer(layer);
         }
     });
-    document.body.appendChild(btn);
-
-    let timeSlider = document.createElement('input');
-
-    timeSlider.type = 'range';
-    timeSlider.min = '1';
-    timeSlider.max = '12';
-    timeSlider.value = '1';
-
-    let monthDisplay = document.createElement('span');
+    map.addLayer(markerLayers[parseInt(timeSlider.value) - 1]);
     monthDisplay.innerText = 'Month: ' + months[parseInt(timeSlider.value) - 1];
+};
 
-    timeSlider.oninput = function () {
-        clearMarkers();
-        for (let d of latlng) {
-            if (parseInt(this.value) === d.month) {
-                addMarker(d);
-            }
-        }
-        monthDisplay.innerText = 'Month: ' + months[parseInt(timeSlider.value) - 1];
-    };
-
-    document.body.appendChild(timeSlider);
-    document.body.appendChild(monthDisplay);
-});
-let geoJson;
-d3.json("fires-by-state.geojson").then(function (dataset){
-    geoJson = L.geoJson(dataset, {
-        style:fireCountStyle,
-        onEachFeature:onEachFeature
-    }).addTo(map);
-});
+document.body.appendChild(timeSlider);
+document.body.appendChild(monthDisplay);
 
 function addMarker(data) {
     var marker = L.circleMarker([data['lat'],data['lon']],  {
@@ -108,17 +114,8 @@ function addMarker(data) {
         default: marker.setStyle({color: 'grey'})
     }
 
-    marker.addTo(map);
+    return marker;
 }
-
-function clearMarkers() {
-    map.eachLayer(function (layer) {
-        if (layer.options.radius !== undefined) {
-            map.removeLayer(layer);
-        }
-    });
-}
-
 
 //legend
 var legend = L.control({position: 'bottomleft'});
@@ -154,10 +151,7 @@ function fireCountStyle(feature) {
 }
 
 function getFireCountColor(d) {
-    // var colors = ['#f2f0f7','#dadaeb','#bcbddc','#9e9ac8','#807dba','#6a51a3','#4a1486'];
-    // colors = colors.reverse();
-    // var colors = ['#f6eff7','#d0d1e6','#a6bddb','#67a9cf','#3690c0','#02818a','#016450'];
-    var colors = [
+    let colors = [
         "#ffffb2",
         "#fed976",
         "#feb24c",
@@ -166,7 +160,7 @@ function getFireCountColor(d) {
         "#e31a1c",
         "#b10026",
     ];
-    // colors = colors.reverse();
+
     return d < 10
         ? colors[0]
         : d < 20
